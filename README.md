@@ -111,7 +111,11 @@ A execução é agendada externamente (cron) toda **segunda às 09:00**. O cálc
 - **Autenticação:** `POST {SANKHYA_BASE_URL}/authenticate` com header `X-Token` e corpo form-urlencoded. O `access_token` expira em ~5 min, então é gerado a cada execução.
 - **Consulta:** `POST {SANKHYA_BASE_URL}/gateway/v1/mge/service.sbr?serviceName=DbExplorerSP.executeQuery&outputType=json` com `Authorization: Bearer <token>`. A resposta traz `fieldsMetadata` (colunas) e `rows` (linhas). `status` diferente de `"1"` é tratado como erro.
 - **Datas:** o Sankhya devolve datas como texto `ddMMyyyy HH:mm:ss`; o script converte para data real no Excel (formato `dd/mm/aaaa`).
-- **Limite de 5.000 linhas:** o `DbExplorerSP.executeQuery` retorna no máximo 5.000 linhas por consulta (testado em 14/10/2026; não consta na documentação oficial). Ao truncar, a API **não** retorna erro: mantém `status: "1"` e sinaliza só `burstLimit: true`. O script trata isso como **falha** (com aviso no Telegram) para nunca enviar arquivo incompleto. Volume atual: ~500 linhas/semana. Se um dia estourar, será preciso paginar a consulta (ex.: `OFFSET ... FETCH NEXT`).
+- **Limite de 5.000 linhas e paginação:** o `DbExplorerSP.executeQuery` retorna no máximo 5.000 linhas por chamada (testado em 14/10/2026; não consta na documentação oficial) e, ao truncar, **não** dá erro: mantém `status: "1"` e sinaliza só `burstLimit: true`. Por isso o script:
+  - **pagina** a consulta acrescentando `OFFSET n ROWS FETCH NEXT 4000 ROWS ONLY` ao final do SQL (`TAMANHO_PAGINA` em `envio_gfk/sankhya.py`) e junta as páginas até vir uma incompleta;
+  - exige que a query **termine com um `ORDER BY` determinístico** — o último critério deve ser a chave única (`ITE.NUNOTA, ITE.SEQUENCIA`), senão linhas podem repetir ou sumir entre páginas. **Mantenha isso ao editar `sql/vendas_gfk.sql`**;
+  - ainda assim trata `burstLimit: true` como **falha**, por segurança.
+  - Validado com 18.547 linhas (5 páginas): sem duplicatas e total igual ao `COUNT(*)`.
 - **Notificações:** com `--sem-ftp` (modo de teste) nada é enviado ao Telegram.
 - **FTP:** usa `ftplib` da biblioteca padrão. Com `FTP_TLS=true` usa FTPS explícito (canal de dados também criptografado).
   - O FTP da GfK (`gimftp.gfk.com`) **exige FTPS**: com `FTP_TLS=false` o login falha com `503 ... AUTH SSL/TLS required`.
@@ -122,5 +126,5 @@ A execução é agendada externamente (cron) toda **segunda às 09:00**. O cálc
 - [x] Notificação via Telegram de sucesso/falha (`envio_gfk/telegram.py`).
 - [x] Calcular o período automaticamente a cada execução (última semana seg–dom).
 - [ ] Agendar a execução semanal (seg 09:00) no servidor de hospedagem.
-- [ ] Paginar a consulta caso o volume semanal se aproxime de 5.000 linhas.
+- [x] Paginar a consulta (limite de 5.000 linhas por chamada do Sankhya).
 - [ ] Confirmar com a GfK o formato aceito (`.xlsx` vs `.xls` legado) e o padrão de nome do arquivo.

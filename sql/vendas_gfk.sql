@@ -2,6 +2,10 @@
 -- Placeholders substituídos pelo script (formato dd/mm/aaaa):
 --   {data_inicio} -> inclusivo
 --   {data_fim}    -> exclusivo (o script passa o dia seguinte ao fim do período)
+--
+-- ATENÇÃO: o script pagina o resultado acrescentando "OFFSET ... FETCH NEXT ..." ao final.
+-- Por isso a query deve TERMINAR com um ORDER BY determinístico (último critério
+-- = chave única: ITE.NUNOTA, ITE.SEQUENCIA), senão linhas podem repetir ou sumir entre páginas.
 SELECT
   CAB.DTNEG AS [DATA]
   ,CAB.CODEMP AS [LOJA]
@@ -25,4 +29,4 @@ WHERE
   AND DTNEG >= '{data_inicio}'
   AND DTNEG  < '{data_fim}'
 
-ORDER BY CAB.DTNEG, CAB.CODEMP, ITE.CODPROD
+ORDER BY CAB.DTNEG, CAB.CODEMP, ITE.CODPROD, ITE.NUNOTA, ITE.SEQUENCIA
