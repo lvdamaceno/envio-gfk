@@ -1,7 +1,7 @@
 -- Vendas para envio à GfK.
 -- Placeholders substituídos pelo script (formato dd/mm/aaaa):
 --   {data_inicio} -> inclusivo
---   {data_fim}    -> exclusivo
+--   {data_fim}    -> exclusivo (o script passa o dia seguinte ao fim do período)
 SELECT
   CAB.DTNEG AS [DATA]
   ,CAB.CODEMP AS [LOJA]

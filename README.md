@@ -74,7 +74,7 @@ python main.py --sem-ftp
 # Fluxo completo (consulta, gera e envia ao FTP)
 python main.py
 
-# Outro período (início inclusivo, fim exclusivo, formato dd/mm/aaaa)
+# Período manual (reenvio/correção) — início e fim inclusivos, formato dd/mm/aaaa
 python main.py --inicio 05/10/2026 --fim 11/10/2026
 
 # Apenas enviar uma notificação de teste ao Telegram
@@ -92,8 +92,19 @@ O script retorna código de saída `0` em sucesso e `1` em falha (útil para cro
 
 ### Período
 
-Por enquanto as datas padrão estão **fixas** em `main.py` (`DATA_INICIO_PADRAO` / `DATA_FIM_PADRAO`) para testes.
-A query usa os placeholders `{data_inicio}` e `{data_fim}`, substituídos pelo script.
+Sem `--inicio`/`--fim`, o período é sempre a **última semana completa, de segunda a domingo**, anterior à semana em que o script roda (função `semana_anterior` em `main.py`):
+
+| Execução                  | Período enviado              |
+|---------------------------|------------------------------|
+| seg 12/10/2026 (normal)   | 05/10/2026 a 11/10/2026      |
+| qua 14/10/2026 (atrasada) | 05/10/2026 a 11/10/2026      |
+| seg 19/10/2026            | 12/10/2026 a 18/10/2026      |
+
+Ou seja, rodar no meio da semana nunca envia a semana corrente (incompleta).
+
+`--inicio` e `--fim` devem ser informados juntos e são **inclusivos**. Na query, `{data_fim}` recebe o dia seguinte ao fim (`DTNEG < data_fim`), para incluir o último dia inteiro.
+
+A execução é agendada externamente (cron) toda **segunda às 09:00**. O cálculo usa a data local do servidor; ajuste o fuso do servidor/cron para `America/Belem` (ou equivalente) se ele estiver em UTC.
 
 ## Detalhes técnicos
 
@@ -107,6 +118,6 @@ A query usa os placeholders `{data_inicio}` e `{data_fim}`, substituídos pelo s
 ## TODO
 
 - [x] Notificação via Telegram de sucesso/falha (`envio_gfk/telegram.py`).
-- [ ] Calcular o período automaticamente a cada execução (substituir as datas fixas).
-- [ ] Agendar a execução (cron/launchd).
+- [x] Calcular o período automaticamente a cada execução (última semana seg–dom).
+- [ ] Agendar a execução semanal (seg 09:00) no servidor de hospedagem.
 - [ ] Confirmar com a GfK o formato aceito (`.xlsx` vs `.xls` legado) e o padrão de nome do arquivo.
