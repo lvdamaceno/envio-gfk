@@ -52,5 +52,12 @@ def executar_query(cfg: SankhyaConfig, token: str, sql: str) -> tuple[list[str],
         raise SankhyaErro(f"Sankhya retornou erro: {corpo.get('statusMessage') or corpo}")
 
     resultado = corpo["responseBody"]
+    # O DbExplorer corta o resultado em 5.000 linhas SEM erro (status continua "1"),
+    # sinalizando apenas burstLimit=true. Melhor falhar do que enviar dados incompletos.
+    if resultado.get("burstLimit"):
+        raise SankhyaErro(
+            f"Resultado truncado pelo Sankhya (limite de {len(resultado.get('rows', []))} linhas "
+            "do DbExplorerSP.executeQuery). É preciso paginar a consulta ou reduzir o período."
+        )
     colunas = [campo["name"] for campo in resultado["fieldsMetadata"]]
     return colunas, resultado.get("rows", [])
