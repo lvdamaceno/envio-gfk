@@ -49,19 +49,29 @@ def executar(inicio: str, fim: str, enviar_ftp: bool) -> None:
     colunas, linhas = sankhya.executar_query(cfg_sankhya, token, sql)
     log.info("%d linha(s) retornada(s).", len(linhas))
 
+    _limpar_saida()
     nome = f"vendas_gfk_{_compacta(inicio)}_{_compacta(fim)}.xlsx"
     arquivo = planilha.gerar_xlsx(colunas, linhas, PASTA_SAIDA / nome)
     log.info("Arquivo gerado: %s", arquivo)
 
     if not enviar_ftp:
-        log.info("--sem-ftp informado: envio ao FTP ignorado.")
+        log.info("--sem-ftp informado: envio ao FTP ignorado (arquivo mantido para conferência).")
         return
 
     cfg_ftp = config.ftp()
     log.info("Enviando para ftp://%s%s ...", cfg_ftp.host, cfg_ftp.diretorio)
     ftp.enviar(cfg_ftp, arquivo)
     log.info("Envio concluído.")
+    arquivo.unlink()
+    log.info("Arquivo local removido: %s", arquivo.name)
     telegram.notificar(f"Arquivo {nome} enviado ao FTP ({len(linhas)} linhas).", sucesso=True)
+
+
+def _limpar_saida() -> None:
+    """Remove planilhas de execuções anteriores para a pasta não acumular arquivos."""
+    for antigo in PASTA_SAIDA.glob("*.xlsx"):
+        antigo.unlink()
+        log.info("Arquivo antigo removido: %s", antigo.name)
 
 
 def _compacta(data: str) -> str:

@@ -64,6 +64,12 @@ python main.py --inicio 05/10/2026 --fim 11/10/2026
 ```
 
 O arquivo é salvo em `saida/vendas_gfk_<inicio>_<fim>.xlsx` (ex.: `vendas_gfk_20261005_20261011.xlsx`).
+
+Para a pasta `saida/` não acumular arquivos:
+- antes de gerar a nova planilha, todos os `.xlsx` existentes em `saida/` são excluídos;
+- após o envio ao FTP com sucesso, o arquivo gerado também é excluído;
+- com `--sem-ftp`, ou se o envio falhar, o arquivo é mantido para conferência (e será removido na próxima execução).
+
 O script retorna código de saída `0` em sucesso e `1` em falha (útil para cron/agendadores).
 
 ### Período
