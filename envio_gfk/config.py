@@ -35,6 +35,12 @@ class FtpConfig:
     usar_tls: bool
 
 
+@dataclass(frozen=True)
+class TelegramConfig:
+    bot_token: str
+    chat_id: str
+
+
 def sankhya() -> SankhyaConfig:
     return SankhyaConfig(
         base_url=os.getenv("SANKHYA_BASE_URL", "https://api.sankhya.com.br").rstrip("/"),
@@ -53,3 +59,12 @@ def ftp() -> FtpConfig:
         diretorio=os.getenv("FTP_DIRETORIO", "/"),
         usar_tls=os.getenv("FTP_TLS", "false").lower() in ("1", "true", "sim"),
     )
+
+
+def telegram() -> TelegramConfig | None:
+    """Opcional: retorna None se o Telegram não estiver configurado."""
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+    chat_id = os.getenv("TELEGRAM_CHAT_ID", "").strip()
+    if not token or not chat_id:
+        return None
+    return TelegramConfig(bot_token=token, chat_id=chat_id)

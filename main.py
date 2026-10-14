@@ -4,6 +4,7 @@ Uso:
     python main.py --sem-ftp              # só consulta e gera o arquivo (teste)
     python main.py                        # fluxo completo
     python main.py --inicio 05/10/2026 --fim 11/10/2026
+    python main.py --testar-telegram      # só envia uma mensagem de teste
 """
 
 import argparse
@@ -35,6 +36,7 @@ def _args():
     p.add_argument("--inicio", type=_data, default=DATA_INICIO_PADRAO, help="dd/mm/aaaa (inclusivo)")
     p.add_argument("--fim", type=_data, default=DATA_FIM_PADRAO, help="dd/mm/aaaa (exclusivo)")
     p.add_argument("--sem-ftp", action="store_true", help="apenas gera o arquivo, sem enviar ao FTP")
+    p.add_argument("--testar-telegram", action="store_true", help="só envia uma notificação de teste")
     return p.parse_args()
 
 
@@ -64,7 +66,10 @@ def executar(inicio: str, fim: str, enviar_ftp: bool) -> None:
     log.info("Envio concluído.")
     arquivo.unlink()
     log.info("Arquivo local removido: %s", arquivo.name)
-    telegram.notificar(f"Arquivo {nome} enviado ao FTP ({len(linhas)} linhas).", sucesso=True)
+    telegram.notificar(
+        f"Período: {inicio} a {fim} (exclusivo)\nArquivo: {nome}\nLinhas: {len(linhas)}",
+        sucesso=True,
+    )
 
 
 def _limpar_saida() -> None:
@@ -82,13 +87,16 @@ def _compacta(data: str) -> str:
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     args = _args()
+    if args.testar_telegram:
+        telegram.notificar("Mensagem de teste: a notificação está configurada.", sucesso=True)
+        return 0
     try:
         executar(args.inicio, args.fim, enviar_ftp=not args.sem_ftp)
         return 0
     except Exception as erro:
         log.exception("Falha na execução")
         if not args.sem_ftp:
-            telegram.notificar(f"Falha no envio GfK: {erro}", sucesso=False)
+            telegram.notificar(f"Período: {args.inicio} a {args.fim} (exclusivo)\nErro: {erro}", sucesso=False)
         return 1
 
 

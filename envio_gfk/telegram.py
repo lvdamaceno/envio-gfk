@@ -1,16 +1,36 @@
-"""Notificação via Telegram.
+"""Notificação via Telegram (Bot API).
 
-TODO: implementar o envio real usando a Bot API:
-  POST https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/sendMessage
-  body: {"chat_id": TELEGRAM_CHAT_ID, "text": mensagem}
-  - adicionar TELEGRAM_BOT_TOKEN e TELEGRAM_CHAT_ID no config.py e .env.example
-  - nunca deixar uma falha na notificação derrubar o script (só logar)
+Se TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID não estiverem configurados, apenas loga.
+Uma falha ao notificar nunca derruba o script: o erro é só registrado no log.
 """
 
 import logging
+import socket
+
+import requests
+
+from . import config
 
 log = logging.getLogger(__name__)
 
 
 def notificar(mensagem: str, sucesso: bool) -> None:
-    log.info("[telegram - TODO] %s %s", "✅" if sucesso else "❌", mensagem)
+    cfg = config.telegram()
+    texto = f"{'✅' if sucesso else '❌'} Envio GfK ({socket.gethostname()})\n\n{mensagem}"
+
+    if cfg is None:
+        log.warning("Telegram não configurado; notificação não enviada: %s", texto)
+        return
+
+    try:
+        resp = requests.post(
+            f"https://api.telegram.org/bot{cfg.bot_token}/sendMessage",
+            json={"chat_id": cfg.chat_id, "text": texto},
+            timeout=30,
+        )
+        if not resp.ok:
+            log.error("Telegram recusou a mensagem (%s): %s", resp.status_code, resp.text[:300])
+            return
+        log.info("Notificação enviada ao Telegram.")
+    except requests.RequestException as erro:
+        log.error("Falha ao notificar no Telegram: %s", erro)
