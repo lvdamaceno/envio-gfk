@@ -138,6 +138,6 @@ Para testar, use **Trigger Run** no painel do job e confira a mensagem no Telegr
 
 - [x] Notificação via Telegram de sucesso/falha (`envio_gfk/telegram.py`).
 - [x] Calcular o período automaticamente a cada execução (última semana seg–dom).
-- [ ] Agendar a execução semanal (seg 09:00) no Render — configuração na seção *Deploy no Render*.
+- [x] Agendar a execução semanal (seg 09:00) no Render — configuração na seção *Deploy no Render*.
 - [x] Paginar a consulta (limite de 5.000 linhas por chamada do Sankhya).
-- [ ] Confirmar com a GfK o formato aceito (`.xlsx` vs `.xls` legado) e o padrão de nome do arquivo.
+- [x] Confirmar com a GfK o formato aceito (`.xlsx` vs `.xls` legado) e o padrão de nome do arquivo.
