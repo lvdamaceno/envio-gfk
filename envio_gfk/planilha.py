@@ -29,11 +29,12 @@ def gerar_xlsx(colunas: list[str], linhas: list[list], destino: Path) -> Path:
     for linha in linhas:
         ws.append([_converter(v) for v in linha])
 
-    # Datas exibidas como dd/mm/aaaa
+    # Datas exibidas como dd/mm/aaaa. Os códigos devem ser minúsculos (padrão OOXML):
+    # em maiúsculas o Excel aceita, mas Numbers/LibreOffice mostram "DD/10/YYYY".
     for linha in ws.iter_rows(min_row=2):
         for celula in linha:
             if isinstance(celula.value, datetime):
-                celula.number_format = "DD/MM/YYYY"
+                celula.number_format = "dd/mm/yyyy"
 
     destino.parent.mkdir(parents=True, exist_ok=True)
     wb.save(destino)
