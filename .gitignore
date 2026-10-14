@@ -1,0 +1,17 @@
+# Credenciais (nunca versionar)
+.env
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+
+# Arquivos gerados pelo script
+saida/*
+!saida/.gitkeep
+*.log
+
+# Sistema / editores
+.DS_Store
+.vscode/
+.idea/
