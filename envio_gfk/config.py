@@ -53,11 +53,11 @@ def sankhya() -> SankhyaConfig:
 def ftp() -> FtpConfig:
     return FtpConfig(
         host=_obrigatoria("FTP_HOST"),
-        porta=int(os.getenv("FTP_PORTA", "21")),
+        porta=int(os.getenv("FTP_PORTA") or "21"),
         usuario=_obrigatoria("FTP_USUARIO"),
         senha=_obrigatoria("FTP_SENHA"),
-        diretorio=os.getenv("FTP_DIRETORIO", "/"),
-        usar_tls=os.getenv("FTP_TLS", "false").lower() in ("1", "true", "sim"),
+        diretorio=os.getenv("FTP_DIRETORIO") or "/",
+        usar_tls=(os.getenv("FTP_TLS") or "false").lower() in ("1", "true", "sim"),
     )
 
 

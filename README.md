@@ -114,6 +114,8 @@ A execução é agendada externamente (cron) toda **segunda às 09:00**. O cálc
 - **Volume:** o log mostra a quantidade de linhas retornadas. O DbExplorer pode limitar o número de linhas por consulta; se o total parecer “redondo” ou menor que o esperado, confira no Sankhya Om.
 - **Notificações:** com `--sem-ftp` (modo de teste) nada é enviado ao Telegram.
 - **FTP:** usa `ftplib` da biblioteca padrão. Com `FTP_TLS=true` usa FTPS explícito (canal de dados também criptografado).
+  - O FTP da GfK (`gimftp.gfk.com`) **exige FTPS**: com `FTP_TLS=false` o login falha com `503 ... AUTH SSL/TLS required`.
+  - O servidor da GfK encerra o canal de dados sem o fechamento TLS, o que gera `Connection reset by peer` ao final do envio mesmo com o arquivo completo. O script registra um aviso e **confere o tamanho do arquivo no FTP**; só considera sucesso se for igual ao local.
 
 ## TODO
 
