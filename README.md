@@ -106,6 +106,19 @@ Ou seja, rodar no meio da semana nunca envia a semana corrente (incompleta).
 
 A execução é agendada externamente (cron) toda **segunda às 09:00**. O cálculo usa a data local do servidor; ajuste o fuso do servidor/cron para `America/Belem` (ou equivalente) se ele estiver em UTC.
 
+## Deploy no Render (Cron Job)
+
+O agendamento do Render é sempre em **UTC**. Segunda 09:00 em Belém (UTC−3, sem horário de verão) = 12:00 UTC.
+
+| Campo             | Valor                             |
+|-------------------|-----------------------------------|
+| Schedule          | `0 12 * * 1`                      |
+| Build Command     | `pip install -r requirements.txt` |
+| Command           | `python main.py`                  |
+
+Em *Environment*, cadastre as mesmas variáveis do `.env.example` (o arquivo `.env` não vai para o Render) e `PYTHON_VERSION=3.12` (mínimo 3.10).
+Para testar, use **Trigger Run** no painel do job e confira a mensagem no Telegram.
+
 ## Detalhes técnicos
 
 - **Autenticação:** `POST {SANKHYA_BASE_URL}/authenticate` com header `X-Token` e corpo form-urlencoded. O `access_token` expira em ~5 min, então é gerado a cada execução.
@@ -125,6 +138,6 @@ A execução é agendada externamente (cron) toda **segunda às 09:00**. O cálc
 
 - [x] Notificação via Telegram de sucesso/falha (`envio_gfk/telegram.py`).
 - [x] Calcular o período automaticamente a cada execução (última semana seg–dom).
-- [ ] Agendar a execução semanal (seg 09:00) no servidor de hospedagem.
+- [ ] Agendar a execução semanal (seg 09:00) no Render — configuração na seção *Deploy no Render*.
 - [x] Paginar a consulta (limite de 5.000 linhas por chamada do Sankhya).
 - [ ] Confirmar com a GfK o formato aceito (`.xlsx` vs `.xls` legado) e o padrão de nome do arquivo.
