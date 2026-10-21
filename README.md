@@ -81,7 +81,8 @@ python main.py --inicio 05/10/2026 --fim 11/10/2026
 python main.py --testar-telegram
 ```
 
-O arquivo é salvo em `saida/vendas_gfk_<inicio>_<fim>.xlsx` (ex.: `vendas_gfk_20261005_20261011.xlsx`).
+O arquivo segue o padrão de nome da GfK: **ano (2 dígitos) + número da semana ISO + `W`**, calculado pela data de início (função `nome_arquivo` em `main.py`). Ex.: semana de 12/10/2026 a 18/10/2026 (semana 42) → `saida/2642W.xlsx`.
+O ano é o da semana ISO: 28/12/2026 a 03/01/2027 vira `2653W.xlsx`.
 
 Para a pasta `saida/` não acumular arquivos:
 - antes de gerar a nova planilha, todos os `.xlsx` existentes em `saida/` são excluídos;
@@ -132,6 +133,8 @@ Para testar, use **Trigger Run** no painel do job e confira a mensagem no Telegr
 - **Notificações:** com `--sem-ftp` (modo de teste) nada é enviado ao Telegram.
 - **FTP:** usa `ftplib` da biblioteca padrão. Com `FTP_TLS=true` usa FTPS explícito (canal de dados também criptografado).
   - O FTP da GfK (`gimftp.gfk.com`) **exige FTPS**: com `FTP_TLS=false` o login falha com `503 ... AUTH SSL/TLS required`.
+  - Após o login a conta já cai na raiz (`/`), que é o diretório onde a GfK espera os arquivos; não é possível subir acima dela (`550 Permission denied`). Mantenha `FTP_DIRETORIO=/` (também no Render). Em 21/10/2026 a raiz estava vazia ao listar (provavelmente a GfK recolhe os arquivos depois de recebê-los).
+  - O caminho completo gravado no FTP (ex.: `/2642W.xlsx`) aparece no log e na mensagem de sucesso do Telegram.
   - O servidor da GfK encerra o canal de dados sem o fechamento TLS, o que gera `Connection reset by peer` ao final do envio mesmo com o arquivo completo. O script registra um aviso e **confere o tamanho do arquivo no FTP**; só considera sucesso se for igual ao local.
 
 ## TODO

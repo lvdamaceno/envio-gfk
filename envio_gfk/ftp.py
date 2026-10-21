@@ -20,8 +20,11 @@ def _conectar(cfg: FtpConfig) -> FTP:
     return ftp
 
 
-def enviar(cfg: FtpConfig, arquivo: Path) -> None:
+def enviar(cfg: FtpConfig, arquivo: Path) -> str:
+    """Envia o arquivo e retorna o caminho completo dele no FTP."""
     with _conectar(cfg) as ftp, arquivo.open("rb") as f:
+        destino = f"{ftp.pwd().rstrip('/')}/{arquivo.name}"
+        log.info("Gravando no FTP em %s", destino)
         try:
             ftp.storbinary(f"STOR {arquivo.name}", f)
         except (ConnectionResetError, ssl.SSLError) as erro:
@@ -36,3 +39,4 @@ def enviar(cfg: FtpConfig, arquivo: Path) -> None:
     if remoto != local:
         raise RuntimeError(f"Envio incompleto: {remoto} bytes no FTP, {local} bytes locais")
     log.info("Tamanho conferido no FTP: %d bytes.", remoto)
+    return destino

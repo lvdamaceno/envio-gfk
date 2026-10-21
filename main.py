@@ -33,6 +33,12 @@ def semana_anterior(hoje: date) -> tuple[date, date]:
     return inicio, inicio + timedelta(days=6)
 
 
+def nome_arquivo(inicio: date) -> str:
+    """Padrão da GfK: ano (2 dígitos) + semana ISO + "W". Ex.: semana 42 de 2026 -> 2642W.xlsx."""
+    ano, semana, _ = inicio.isocalendar()
+    return f"{ano % 100:02d}{semana:02d}W.xlsx"
+
+
 def _data(valor: str) -> date:
     """Converte dd/mm/aaaa para o argparse."""
     return datetime.strptime(valor, "%d/%m/%Y").date()
@@ -71,7 +77,7 @@ def executar(inicio: date, fim: date, enviar_ftp: bool) -> None:
     log.info("%d linha(s) retornada(s).", len(linhas))
 
     _limpar_saida()
-    nome = f"vendas_gfk_{inicio:%Y%m%d}_{fim:%Y%m%d}.xlsx"
+    nome = nome_arquivo(inicio)
     arquivo = planilha.gerar_xlsx(colunas, linhas, PASTA_SAIDA / nome)
     log.info("Arquivo gerado: %s", arquivo)
 
@@ -81,12 +87,12 @@ def executar(inicio: date, fim: date, enviar_ftp: bool) -> None:
 
     cfg_ftp = config.ftp()
     log.info("Enviando para ftp://%s%s ...", cfg_ftp.host, cfg_ftp.diretorio)
-    ftp.enviar(cfg_ftp, arquivo)
-    log.info("Envio concluído.")
+    destino = ftp.enviar(cfg_ftp, arquivo)
+    log.info("Envio concluído: %s", destino)
     arquivo.unlink()
     log.info("Arquivo local removido: %s", arquivo.name)
     telegram.notificar(
-        f"Período: {periodo}\nArquivo: {nome}\nLinhas: {len(linhas)}",
+        f"Período: {periodo}\nArquivo no FTP: {destino}\nLinhas: {len(linhas)}",
         sucesso=True,
     )
 
