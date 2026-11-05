@@ -10,6 +10,7 @@ import requests
 from .config import SankhyaConfig
 
 TIMEOUT = 120  # segundos
+TIMEOUT_CENTRAL = 200  # uma chamada à central pode esperar até 120 s na fila e mais 60 s no Sankhya
 # O DbExplorerSP.executeQuery devolve no máximo 5.000 linhas por chamada;
 # usamos páginas menores por margem de segurança.
 TAMANHO_PAGINA = 4000
@@ -23,6 +24,8 @@ class SankhyaErro(Exception):
 
 def autenticar(cfg: SankhyaConfig) -> str:
     """Obtém o access_token (Bearer) via client_credentials. O token expira em ~5 min."""
+    if cfg.proxy_url:
+        return ""  # a conexão central cuida do login
     resp = requests.post(
         f"{cfg.base_url}/authenticate",
         headers={"X-Token": cfg.x_token},
@@ -38,8 +41,20 @@ def autenticar(cfg: SankhyaConfig) -> str:
     return resp.json()["access_token"]
 
 
-def _executar(cfg: SankhyaConfig, token: str, sql: str) -> dict:
-    """Uma chamada ao DbExplorerSP.executeQuery; retorna o responseBody."""
+def _pela_central(cfg: SankhyaConfig, sql: str) -> dict:
+    """A mesma consulta pela conexão central. Sem cache: o arquivo enviado à GfK precisa do dado atual."""
+    resp = requests.post(
+        f"{cfg.proxy_url}/servico",
+        headers={"x-proxy-chave": cfg.proxy_chave},
+        json={"nome": "DbExplorerSP.executeQuery", "corpo": {"sql": sql}, "rotulo": "vendas_gfk", "semCache": True},
+        timeout=TIMEOUT_CENTRAL,
+    )
+    if resp.status_code != 200:
+        raise SankhyaErro(f"Conexão central: erro HTTP {resp.status_code} na consulta: {resp.text[:500]}")
+    return resp.json()["d"]
+
+
+def _direto(cfg: SankhyaConfig, token: str, sql: str) -> dict:
     resp = requests.post(
         f"{cfg.base_url}/gateway/v1/mge/service.sbr",
         params={"serviceName": "DbExplorerSP.executeQuery", "outputType": "json"},
@@ -49,8 +64,12 @@ def _executar(cfg: SankhyaConfig, token: str, sql: str) -> dict:
     )
     if resp.status_code != 200:
         raise SankhyaErro(f"Erro HTTP {resp.status_code} na consulta: {resp.text[:500]}")
+    return resp.json()
 
-    corpo = resp.json()
+
+def _executar(cfg: SankhyaConfig, token: str, sql: str) -> dict:
+    """Uma chamada ao DbExplorerSP.executeQuery; retorna o responseBody."""
+    corpo = _pela_central(cfg, sql) if cfg.proxy_url else _direto(cfg, token, sql)
     # status "1" = sucesso; qualquer outro valor traz o motivo em statusMessage
     if str(corpo.get("status")) != "1":
         raise SankhyaErro(f"Sankhya retornou erro: {corpo.get('statusMessage') or corpo}")
