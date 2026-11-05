@@ -23,6 +23,9 @@ class SankhyaConfig:
     client_id: str
     client_secret: str
     x_token: str
+    # Conexão central (sankhya-central): com ela, as credenciais e o token ficam lá.
+    proxy_url: str = ""
+    proxy_chave: str = ""
 
 
 @dataclass(frozen=True)
@@ -42,6 +45,10 @@ class TelegramConfig:
 
 
 def sankhya() -> SankhyaConfig:
+    proxy_url = os.getenv("SANKHYA_PROXY_URL", "").strip().rstrip("/")
+    if proxy_url:
+        return SankhyaConfig(base_url="", client_id="", client_secret="", x_token="", proxy_url=proxy_url,
+                             proxy_chave=_obrigatoria("SANKHYA_PROXY_CHAVE"))
     return SankhyaConfig(
         base_url=os.getenv("SANKHYA_BASE_URL", "https://api.sankhya.com.br").rstrip("/"),
         client_id=_obrigatoria("SANKHYA_CLIENT_ID"),
